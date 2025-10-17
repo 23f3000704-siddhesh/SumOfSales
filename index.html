@@ -1,0 +1,291 @@
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Summary 149</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --border: #1f2937;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, var(--bg) 60%) no-repeat,
+                  linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) no-repeat;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) padding-box;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    #total-sales {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--accent);
+      text-shadow: 0 0 18px rgba(34,197,94,0.15);
+      min-height: 2.8rem;
+      word-break: break-word;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      color: #081c10;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+      transition: transform 0.05s ease, filter 0.2s ease;
+    }
+    button:hover { filter: brightness(1.05); }
+    button:active { transform: translateY(1px); }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .status {
+      margin-top: 8px;
+      min-height: 1.25rem;
+      color: var(--muted);
+    }
+    .status.error {
+      color: var(--danger);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.02);
+    }
+    .row .title {
+      font-weight: 600;
+    }
+    .row .qty {
+      color: var(--muted);
+    }
+    .row .amt {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .sr-only {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Sales Summary 149</h1>
+      <div class="actions">
+        <button id="refresh-btn" type="button" aria-label="Refresh sales data">Refresh</button>
+        <span class="muted">Auto-fetches on load</span>
+      </div>
+    </header>
+
+    <section class="card kpi" aria-live="polite" aria-atomic="true">
+      <div class="label">Total Sales</div>
+      <div id="total-sales">$0.00</div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <div class="grid" style="margin-top:16px;">
+      <section class="card">
+        <h2 class="sr-only">Sales breakdown</h2>
+        <div id="breakdown" class="list"></div>
+      </section>
+      <section class="card">
+        <h2 class="sr-only">Details</h2>
+        <p class="muted">
+          This demo fetches JSON data, computes totals, and renders a breakdown.
+          Click Refresh to re-fetch and recalculate.
+        </p>
+      </section>
+    </div>
+
+    <footer>
+      Data is fetched locally via a blob URL to avoid external dependencies.
+    </footer>
+  </div>
+
+  <script>
+    // Utility: currency formatter
+    const fmt = new Intl.NumberFormat(navigator.language || 'en-US', {
+      style: 'currency', currency: 'USD', maximumFractionDigits: 2
+    });
+
+    const elTotal = document.getElementById('total-sales');
+    const elStatus = document.getElementById('status');
+    const elBreakdown = document.getElementById('breakdown');
+    const btnRefresh = document.getElementById('refresh-btn');
+
+    // Generate a new dataset each fetch to simulate changing data
+    function generateSampleData() {
+      // Slight randomization to simulate updates
+      const base = [
+        { id: 101, item: 'Widget A', quantity: 3, price: 19.99 },
+        { id: 102, item: 'Widget B', quantity: 1, price: 49.50 },
+        { id: 103, item: 'Widget C', quantity: 2, price: 15.00 },
+        { id: 104, item: 'Service Plan', quantity: 1, price: 89.00 },
+        { id: 105, item: 'Accessory', quantity: 4, price: 7.25 }
+      ];
+      return {
+        sales: base.map(s => ({
+          ...s,
+          quantity: Math.max(1, Math.round(s.quantity + (Math.random() - 0.5) * 2)),
+          price: Number((s.price * (0.95 + Math.random() * 0.1)).toFixed(2))
+        })),
+        meta: {
+          generatedAt: new Date().toISOString()
+        }
+      };
+    }
+
+    function createBlobUrlFromData(obj) {
+      const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+      return URL.createObjectURL(blob);
+    }
+
+    async function fetchSalesData() {
+      // Create a fresh blob URL each time to simulate a fetch
+      const dataObj = generateSampleData();
+      const url = createBlobUrlFromData(dataObj);
+      try {
+        elStatus.textContent = 'Fetching data...';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Network error: ' + res.status);
+        const json = await res.json();
+        return json;
+      } finally {
+        // Revoke the blob URL to free memory
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function calculateTotalSales(data) {
+      if (!data || !Array.isArray(data.sales)) return 0;
+      return data.sales.reduce((sum, s) => sum + (Number(s.quantity) * Number(s.price)), 0);
+    }
+
+    function renderBreakdown(data) {
+      elBreakdown.innerHTML = '';
+      if (!data || !Array.isArray(data.sales) || data.sales.length === 0) {
+        elBreakdown.innerHTML = '<div class="muted">No sales to display.</div>';
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      data.sales.forEach(s => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = s.item;
+        const qty = document.createElement('div');
+        qty.className = 'qty';
+        qty.textContent = `x${s.quantity}`;
+        const amt = document.createElement('div');
+        amt.className = 'amt';
+        amt.textContent = fmt.format(s.quantity * s.price);
+        row.append(title, qty, amt);
+        frag.appendChild(row);
+      });
+      elBreakdown.appendChild(frag);
+    }
+
+    async function loadAndRender() {
+      try {
+        btnRefresh.disabled = true;
+        elStatus.classList.remove('error');
+        elStatus.textContent = 'Fetching data...';
+        const data = await fetchSalesData();
+        const total = calculateTotalSales(data);
+        elTotal.textContent = fmt.format(total);
+        renderBreakdown(data);
+        elStatus.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+        elStatus.classList.add('error');
+        elStatus.textContent = 'Failed to fetch data. Please try again.';
+      } finally {
+        btnRefresh.disabled = false;
+      }
+    }
+
+    btnRefresh.addEventListener('click', loadAndRender);
+    window.addEventListener('DOMContentLoaded', loadAndRender);
+  </script>
+</body>
+</html>
